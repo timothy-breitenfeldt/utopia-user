@@ -1,0 +1,19 @@
+{
+  "name": "utopia-user",
+  "version": "1.0.0",
+  "description": "Manages account actions for a user.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timothy-breitenfeldt/utopia-user.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/timothy-breitenfeldt/utopia-user/issues"
+  },
+  "homepage": "https://github.com/timothy-breitenfeldt/utopia-user#readme"
+}
