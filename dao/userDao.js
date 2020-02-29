@@ -1,15 +1,37 @@
 "use strict";
 
 const db = require("./db");
+const bcrypt = require("bcrypt");
 const { ApplicationError } = require("../helper/error");
 
-function getUser(email, password) {
+function getUserByEmailAndPassword(email, password) {
   return new Promise(async function(resolve, reject) {
-    //delay a random amount of time up to 1 second to discourage brute force attacks
-    const delay = Math.floor(Math.random() * 1200) + 300;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    try {
+      //delay a random amount of time up to 1 second to discourage brute force attacks
+      const delay = Math.floor(Math.random() * 1200) + 300;
+      await new Promise(resolve => setTimeout(resolve, delay));
 
+      const user = await _getUserByEmail(email);
+      const hash = user.password;
+      const isValidPassword = await _authenticatePassword(password, hash);
+
+      if (!isValidPassword) {
+        return reject(
+          new ApplicationError(403, "Invalid username or password")
+        );
+      }
+
+      return resolve(user);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function _getUserByEmail(email) {
+  return new Promise(function(resolve, reject) {
     const sql = "SELECT * from user WHERE email = ?;";
+
     db.connection.query(sql, [email], function(error, result) {
       if (error) {
         return reject(error);
@@ -19,13 +41,16 @@ function getUser(email, password) {
           new ApplicationError(403, "Invalid username or password")
         );
       }
-      if (password != result[0].password) {
-        return reject(
-          new ApplicationError(403, "Invalid username or password")
-        );
-      }
 
       return resolve(result[0]);
+    });
+  });
+}
+
+function _authenticatePassword(password, hash) {
+  return new Promise(function(resolve, reject) {
+    bcrypt.compare(password, hash, function(error, result) {
+      return error ? reject(error) : resolve(result);
     });
   });
 }
@@ -44,9 +69,11 @@ function createUser(user) {
     }
 
     try {
+      const hash = await _hashPassword(user.password);
+
       const parameters = [
         user.email,
-        user.password,
+        hash,
         user.role,
         user.agency_id,
         user.first_name,
@@ -61,11 +88,24 @@ function createUser(user) {
       ];
       const sql =
         "INSERT INTO user (email, password, role, agency_id, first_name, last_name, dob, phone, street, country, state, city, postal_code) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);";
+
       await db.connection.query(sql, parameters);
       const id = await db.getLastInsertedId();
       return resolve(id);
     } catch (error) {
       return reject(error);
+    }
+  });
+}
+
+function _hashPassword(password) {
+  return new Promise(async function(resolve, reject) {
+    try {
+      const saltRounds = Math.floor(Math.random() * 5) + 6;
+      const hash = await bcrypt.hash(password, saltRounds);
+      return resolve(hash);
+    } catch (error) {
+      reject(error);
     }
   });
 }
@@ -87,6 +127,6 @@ function _checkIfEmailExists(email) {
 }
 
 module.exports = {
-  getUser,
+  getUser: getUserByEmailAndPassword,
   createUser
 };
