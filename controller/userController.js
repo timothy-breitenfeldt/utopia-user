@@ -30,7 +30,7 @@ routes.post("/account/register", async function(request, response, next) {
 
 //Endpoint for healthcheck
 routes.get("/account", function(request, response, next) {
-  response.sendStatus(200);
+  response.send("Health check").status(200);
 });
 
 module.exports = routes;
