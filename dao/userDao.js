@@ -21,6 +21,7 @@ function getUserByEmailAndPassword(email, password) {
         );
       }
 
+      delete user.password;
       return resolve(user);
     } catch (error) {
       reject(error);
